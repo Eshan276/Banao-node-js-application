@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Authentication</title>
+  </head>
+  <body>
+    <h2>User Authentication</h2>
+    <div id="registrationForm">
+      <h3>User Registration</h3>
+      <form id="registerForm">
+        <label for="regEmail">Email:</label><br />
+        <input type="email" id="regEmail" name="email" required /><br />
+        <label for="regUsername">Username:</label><br />
+        <input type="text" id="regUsername" name="username" required /><br />
+        <label for="regPassword">Password:</label><br />
+        <input
+          type="password"
+          id="regPassword"
+          name="password"
+          required
+        /><br /><br />
+        <button type="submit">Register</button>
+      </form>
+      <button id="loginSwitch">Switch to Login</button>
+    </div>
+
+    <div id="loginForm" style="display: none">
+      <h3>User Login</h3>
+      <form id="loginForm">
+        <label for="loginUsername">Username:</label><br />
+        <input type="text" id="loginUsername" name="username" required /><br />
+        <label for="loginPassword">Password:</label><br />
+        <input
+          type="password"
+          id="loginPassword"
+          name="password"
+          required
+        /><br /><br />
+        <button type="submit">Login</button>
+      </form>
+      <button id="registerSwitch">Switch to Register</button>
+      <button id="forgotPassword">Forgot Password</button>
+    </div>
+
+    <div id="forgotPasswordFormdiv" style="display: none">
+      <h3>Forgot Password</h3>
+      <form id="forgotPasswordForm">
+        <label for="forgotEmail">Enter your email:</label><br />
+        <input type="email" id="forgotEmail" name="email" required /><br />
+        <button type="submit" id="forgotpasswordbutton">Reset Password</button>
+      </form>
+      <button id="backToLogin">Back to Login</button>
+    </div>
+
+    <div id="resetPasswordFormdiv" style="display: none">
+      <h3>Reset Password</h3>
+      <form id="resetPasswordForm">
+        <label for="resetPassword">New Password:</label><br />
+        <input
+          type="password"
+          id="resetPassword"
+          name="password"
+          required
+        /><br /><br />
+        <button type="submit">Reset Password</button>
+      </form>
+      <button id="backToLoginAfterReset">Back to Login</button>
+    </div>
+    <div id="home_display" style="display: none"></div>
+    <script>
+      // document
+      //   .getElementById("forgotPasswordForm")
+      //   .addEventListener("submit", async function (event) {
+      //     event.preventDefault();
+
+      //     const formData = new FormData(event.target);
+      //     const email = formData.get("email");
+
+      //     localStorage.setItem("email", email);
+      //     document.getElementById("forgotPasswordForm").style.display = "none";
+      //     document.getElementById("resetPasswordForm").style.display = "block";
+      //   });
+      document
+        .getElementById("forgotpasswordbutton")
+        .addEventListener("click", function (event) {
+          event.preventDefault();
+
+          const form = document.getElementById("forgotPasswordForm"); // replace "yourFormId" with the id of your form
+          console.log(form);
+          const formData = new FormData(form);
+          const email = formData.get("email");
+
+          localStorage.setItem("email", email);
+          document.getElementById("forgotPasswordFormdiv").style.display =
+            "none";
+          document.getElementById("resetPasswordFormdiv").style.display =
+            "block";
+        });
+
+      document
+        .getElementById("resetPasswordForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+          const email = localStorage.getItem("email");
+          const formData = new FormData(event.target);
+          const newPassword = formData.get("password");
+          // const urlParams = new URLSearchParams(window.location.search);
+          // const token = urlParams.get("token");
+
+          try {
+            const response = await fetch(
+              "http://localhost:3000/reset-password",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ email, newPassword }),
+              }
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              alert(data.message); // Display success message
+              // Redirect or perform any other action after resetting the password
+            } else {
+              const data = await response.json();
+              alert(data.message); // Display error message
+            }
+          } catch (error) {
+            console.error("Error resetting password:", error);
+            alert("An error occurred. Please try again later.");
+          }
+        });
+
+      // Toggle between login and registration forms
+      document
+        .getElementById("loginSwitch")
+        .addEventListener("click", function () {
+          document.getElementById("registrationForm").style.display = "none";
+          document.getElementById("loginForm").style.display = "block";
+        });
+
+      document
+        .getElementById("registerSwitch")
+        .addEventListener("click", function () {
+          document.getElementById("loginForm").style.display = "none";
+          document.getElementById("registrationForm").style.display = "block";
+        });
+
+      // Show forgot password form
+      document
+        .getElementById("forgotPassword")
+        .addEventListener("click", function () {
+          document.getElementById("loginForm").style.display = "none";
+          document.getElementById("forgotPasswordFormdiv").style.display =
+            "block";
+        });
+
+      // Back to login form from forgot password
+      document
+        .getElementById("backToLogin")
+        .addEventListener("click", function () {
+          document.getElementById("forgotPasswordFormdiv").style.display =
+            "none";
+          document.getElementById("loginForm").style.display = "block";
+          document.getElementById("resetPasswordFormdiv").style.display =
+            "none";
+        });
+      document
+        .getElementById("backToLoginAfterReset")
+        .addEventListener("click", function () {
+          document.getElementById("resetPasswordFormdiv").style.display =
+            "none";
+          document.getElementById("loginForm").style.display = "block";
+        });
+      // Back to login form after resetting password
+      document
+        .getElementById("backToLoginAfterReset")
+        .addEventListener("click", function () {
+          document.getElementById("resetPasswordForm").style.display = "none";
+          document.getElementById("loginForm").style.display = "block";
+        });
+
+      // Handle registration form submission
+      document
+        .getElementById("registerForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const formData = new FormData(this);
+          const requestBody = {
+            email: formData.get("email"),
+            username: formData.get("username"),
+            password: formData.get("password"),
+          };
+
+          try {
+            const response = await fetch("http://localhost:3000/register", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(requestBody),
+            });
+
+            if (response.ok) {
+              alert("User registered successfully!");
+              // Redirect or perform any other action after successful registration
+            } else {
+              const data = await response.json();
+              alert(data.message);
+            }
+          } catch (error) {
+            console.error("Error registering user:", error);
+            alert(
+              "An error occurred while registering the user. Please try again later."
+            );
+          }
+        });
+
+      // Handle login form submission
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const formData = new FormData(event.target);
+          const requestBody = {
+            username: formData.get("username"),
+            password: formData.get("password"),
+          };
+
+          try {
+            const response = await fetch("http://localhost:3000/login", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(requestBody),
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              alert("User logged in successfully!");
+              // Redirect or perform any other action after successful login
+              document.getElementById("loginForm").style.display = "none";
+              document.getElementById("home_display").style.display = "block";
+              document.getElementById("home_display").innerHTML =
+                "welcome " + formData.get("username");
+            } else {
+              const data = await response.json();
+              alert(data.message);
+            }
+          } catch (error) {
+            console.error("Error logging in user:", error);
+            alert(
+              "An error occurred while logging in. Please try again later."
+            );
+          }
+        });
+    </script>
+  </body>
+</html>
