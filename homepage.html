@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Social Media</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+      .navbar {
+        background-color: #333;
+        color: white;
+        padding: 10px;
+      }
+      .container {
+        display: flex;
+        justify-content: space-between;
+        margin: 20px;
+      }
+      .posts {
+        width: 60%;
+        overflow-y: auto;
+      }
+      .post {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+      .comments {
+        width: 35%;
+        padding: 10px;
+        border: 1px solid #ccc;
+      }
+      .comment {
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 5px;
+        margin-bottom: 5px;
+      }
+      .comment:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+        margin-bottom: 0;
+      }
+      .input-comment {
+        margin-top: 10px;
+      }
+      .input-comment textarea {
+        width: 100%;
+        padding: 5px;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar">
+      <div class="container">
+        <div>Logo</div>
+        <div>Home</div>
+        <div>Profile</div>
+        <div><button onclick="showPostForm()">Post</button></div>
+        <div>Logout</div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="posts" id="postsContainer">
+        <!-- Posts will be dynamically added here -->
+      </div>
+    </div>
+    <script>
+      let postIDList = [];
+      function fetchPosts() {
+        fetch("http://localhost:3000/getposts")
+          .then((response) => response.json())
+          .then((data) => {
+            const postsContainer = document.getElementById("postsContainer");
+            data.forEach((post) => {
+              postIDList.push(post.post_id);
+              const postElement = document.createElement("div");
+              postElement.classList.add("post");
+              postElement.innerHTML = `
+                    <div>${post.post_data}</div>
+                    <div>Posted by: ${post.username} | Likes: <span id="likesCount_${post.post_id}">${post.likes}</span></div>
+                    <button id="commentButton_${post.post_id}" >Comment</button>
+                    <button id="LikeButton_${post.post_id}" data-liked="false" >Like</button>
+                    <div id="comments${post.post_id}" style="display: none;" class="comments">
+                        <!-- Comments will be dynamically added here -->
+                    </div>
+                `;
+              postsContainer.appendChild(postElement);
+
+              // Add comments
+              const commentList = post.comment_list.split("_");
+              const commentsContainer = document.getElementById(
+                "comments" + post.post_id
+              );
+              commentList.forEach((comment) => {
+                if (comment) {
+                  const commentElement = document.createElement("div");
+                  commentElement.classList.add("comment");
+                  commentElement.textContent = comment;
+                  commentsContainer.appendChild(commentElement);
+                }
+              });
+
+              // Attach event listeners
+              document
+                .getElementById("commentButton_" + post.post_id)
+                .addEventListener("click", () => toggleComments(post.post_id));
+              document
+                .getElementById("LikeButton_" + post.post_id)
+                .addEventListener("click", () => likePost(post.post_id));
+            });
+          })
+          .catch((error) => console.error("Error fetching posts:", error));
+      }
+
+      const username = localStorage.getItem("username");
+      function toggleComments(postId) {
+        var comments = document.getElementById("comments" + postId);
+        if (comments.style.display === "none") {
+          comments.style.display = "block";
+        } else {
+          comments.style.display = "none";
+        }
+
+        var addComment = confirm("Do you want to add a comment?");
+        if (addComment) {
+          var commentContent = prompt("Enter your comment:");
+          if (commentContent !== null && commentContent.trim() !== "") {
+            console.log(postId);
+            const requestBody = {
+              post_id: postId,
+              comment: commentContent,
+            };
+
+            try {
+              fetch("http://localhost:3000/addcomment", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(requestBody),
+              })
+                .then((response) => {
+                  if (response.ok) {
+                    alert("Comment added successfully!");
+                    window.location.reload();
+                  } else {
+                    console.error("Failed to add comment");
+                    alert("Failed to add comment. Please try again later.");
+                  }
+                })
+                .catch((error) => {
+                  console.error("Error while adding comment:", error);
+                  alert(
+                    "An error occurred while adding comment. Please try again later."
+                  );
+                });
+            } catch (error) {
+              console.error("Error while adding comment", error);
+              alert(
+                "An error occurred while hhhhadding comment. Please try again later."
+              );
+            }
+
+            console.log("Comment added:", commentContent);
+          } else {
+            alert("Comment cancelled.");
+          }
+        }
+        //window.location.reload();
+      }
+
+      function likePost(postId) {
+        // Check if the user has already liked the post
+        var likeButton = document.getElementById("LikeButton_" + postId);
+        var isLiked = likeButton.dataset.liked === "true";
+
+        // Get the likes count element
+        var likesCountElement = document.getElementById("likesCount_" + postId);
+        var currentLikes = parseInt(likesCountElement.textContent);
+        let paramL = 0;
+        // If the user has already liked the post, decrease likes count
+        if (isLiked) {
+          likesCountElement.textContent = currentLikes - 1;
+          likeButton.dataset.liked = "false"; // Update dataset to show the post is unliked
+          paramL = 0;
+          console.log("Unlike post with ID:", postId);
+        } else {
+          // If the user has not liked the post, increase likes count
+          likesCountElement.textContent = currentLikes + 1;
+          likeButton.dataset.liked = "true"; // Update dataset to show the post is liked
+          paramL = 1;
+          console.log("Like post with ID:", postId);
+        }
+        try {
+          const requestBody = {
+            post_id: postId,
+            param: paramL,
+          };
+          fetch("http://localhost:3000/addlike", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestBody),
+          })
+            .then((response) => {
+              if (response.ok) {
+                console.log("Successfully liked/unliked post");
+              } else {
+                console.error("Failed to like/unlike post");
+              }
+            })
+            .catch((error) =>
+              console.error("Error while liking/unliking post:", error)
+            );
+        } catch (error) {
+          console.error("Error while liking/unliking post:", error);
+        }
+      }
+
+      async function showPostForm() {
+        var postContent = prompt("What's on your mind?");
+        if (postContent !== null && postContent.trim() !== "") {
+          const requestBody = {
+            username: username,
+            post_data: postContent,
+          };
+          try {
+            const response = await fetch("http://localhost:3000/addpost", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(requestBody),
+            });
+
+            if (response.ok) {
+              alert("successfully Posted!");
+              //relode
+              window.location.reload();
+            } else {
+              const data = await response.json();
+              alert(data.message);
+            }
+          } catch (error) {
+            console.error("Error while posting", error);
+            alert(
+              "An error occurred while posting user. Please try again later."
+            );
+          }
+          //alert("You posted: " + postContent);
+        } else {
+          alert("Post cancelled.");
+        }
+      }
+      // for (let i = 0; i < postIDList.length; i++) {
+      //   document
+      //     .getElementById("commentButton_" + postIDList[i])
+      //     .addEventListener("click", () => toggleComments(postIDList[i]));
+      //   document
+      //     .getElementById("LikeButton_" + postIDList[i])
+      //     .addEventListener("click", () => likePost(postIDList[i]));
+      // }
+      fetchPosts();
+    </script>
+  </body>
+</html>

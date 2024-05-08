@@ -245,6 +245,8 @@
             if (response.ok) {
               const data = await response.json();
               alert("User logged in successfully!");
+              localStorage.setItem("username", formData.get("username"));
+              window.location.href = "homepage.html";
               // Redirect or perform any other action after successful login
               document.getElementById("loginForm").style.display = "none";
               document.getElementById("home_display").style.display = "block";
